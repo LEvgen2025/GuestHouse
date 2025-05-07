@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">>
+<head>
+    <title>Панель администратора</title>
+    <link rel="stylesheet" th:href="@{/adminPanel.css}">
+</head>
+<body>
+<section layout:fragment="content">
+    <h1>Список пользователей</h1><hr>
+    <br>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Имя</th>
+            <th>Роль</th>
+            <th>Изменить роль</th>
+            <th>Удалить</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users}" th:attr="data-id=${user.id}">
+            <td th:text="${user.username}"></td>
+            <td th:text="${user.roles.contains(T(com.example.guestHouse.repository.enums.Role).ROLE_ADMIN) ? 'Администратор' : 'Пользователь'}"></td>
+            <td>
+                <form th:action="@{/admin/user/edit/{id}(id=${user.id})}" method="get">
+                    <button type="submit" class="edit-btn">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </form>
+            </td>
+            <td>
+                <button class="delete-btn"
+                        th:attr="data-id=${user.id}"
+                        onclick="confirmDelete(this)"
+                        th:if="${user.username != currentUsername}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="width: 30%;">
+            <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+            <h2>Подтверждение удаления</h2>
+            <p>Вы уверены, что хотите удалить этого пользователя?</p>
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="button" class="edit-btn" onclick="closeModal('deleteModal')" style="margin-right: 10px;">
+                    Отмена
+                </button>
+                <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
+                <button type="button" class="delete-btn" id="confirmDeleteBtn">
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Общие функции для работы с модальными окнами
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Закрытие при клике вне модального окна
+        window.onclick = function (event) {
+            if (event.target.className === 'modal') {
+                const modals = document.getElementsByClassName('modal');
+                for (let modal of modals) {
+                    modal.style.display = 'none';
+                }
+            }
+        }
+        
+        // Логика удаления дома
+        let userIdToDelete = null;
+
+        function confirmDelete(button) {
+            userIdToDelete = button.getAttribute('data-id');
+            openModal('deleteModal');
+        }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            if (!userIdToDelete) return;
+
+            try {
+                const response = await fetch(`/admin/user/delete/${userIdToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+                    }
+                });
+
+                if (response.ok) {
+                    document.querySelector(`tr[data-id="${userIdToDelete}"]`).remove();
+                    alert('Пользователь удалён успешно!');
+                } else if (response.status === 400) {
+                    alert('Нельзя удалить самого себя!');
+                } else {
+                    alert('Ошибка при удалении: ' + response.status);
+                }
+            } catch (error) {
+                alert('Ошибка сети: ' + error.message);
+            } finally {
+                closeModal('deleteModal');
+            }
+        });
+    </script>
+
+</section>
+</body>
+</html>

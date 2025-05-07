@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <link rel="stylesheet" th:href="@{/rentals.css?v=1}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+  <title>Бронирования</title>
+</head>
+
+<body>
+<section layout:fragment="content">
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    var bookedPeriods = /*[[${bookedPeriods}]]*/ {};
+    /*]]>*/
+  </script>
+
+  <h1>Список бронирований</h1>
+  <br>
+  <button class="add-btn" onclick="openModal('addRentalModal')">Добавить бронирование</button>
+
+  <table>
+    <thead>
+    <tr>
+      <th>Клиент</th>
+      <th>Дом</th>
+      <th>Дата начала</th>
+      <th>Дата окончания</th>
+      <th>Сумма</th>
+      <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="rental : ${rentals}" th:attr="data-id=${rental.id}">
+      <td th:text="${rental.client.name}"></td>
+      <td th:text="${rental.house.name}"></td>
+      <td th:text="${#temporals.format(rental.startDate, 'dd.MM.yyyy')}"></td>
+      <td th:text="${#temporals.format(rental.endDate, 'dd.MM.yyyy')}"></td>
+      <td th:text="${rental.summaryPrice % 1 == 0} ? ${#numbers.formatDecimal(rental.summaryPrice, 0, 0)} : ${#numbers.formatDecimal(rental.summaryPrice, 2, 2)}"></td>
+      <td>
+        <button class="edit-btn"
+                th:attr="data-id=${rental.id},
+                         data-client-id=${rental.client.id},
+                         data-house-id=${rental.house.id},
+                         data-start-date=${#temporals.format(rental.startDate, 'yyyy-MM-dd')},
+                         data-end-date=${#temporals.format(rental.endDate, 'yyyy-MM-dd')},
+                         data-summary-price=${rental.summaryPrice}"
+                onclick="openEditRentalModal(this)">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="delete-btn"
+                th:attr="data-id=${rental.id}"
+                onclick="confirmRentalDelete(this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- Модальное окно добавления-->
+  <div id="addRentalModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('addRentalModal')">&times;</span>
+      <h2>Добавить аренду</h2>
+      <form id="addRentalForm">
+        <div class="form-group">
+          <label for="addClient">Клиент:</label>
+          <select id="addClient" required>
+            <option value="">Выберите клиента</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addHouse">Дом:</label>
+          <select id="addHouse" required>
+            <option value="">Выберите дом</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addStartDate">Дата начала:</label>
+          <input type="text" id="addStartDate" class="date-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="addEndDate">Дата окончания:</label>
+          <input type="text" id="addEndDate" class="date-input" required>
+        </div>
+        <button type="submit" class="submit-btn">Добавить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно редактирования -->
+  <div id="editRentalModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('editRentalModal')">&times;</span>
+      <h2>Редактировать аренду</h2>
+      <form id="editRentalForm">
+        <input type="hidden" id="editRentalId">
+        <div class="form-group">
+          <label>Клиент:</label>
+          <span id="editClientName" class="form-readonly"></span>
+        </div>
+        <div class="form-group">
+          <label>Дом:</label>
+          <span id="editHouseName" class="form-readonly"></span>
+        </div>
+        <div class="form-group">
+          <label for="editStartDate">Дата начала:</label>
+          <input type="text" id="editStartDate" class="date-input" required>
+        </div>
+        <div class="form-group">
+          <label for="editEndDate">Дата окончания:</label>
+          <input type="text" id="editEndDate" class="date-input" required>
+        </div>
+        <div class="form-group">
+          <label>Сумма:</label>
+          <span id="editSummaryPrice" class="form-readonly"></span>
+        </div>
+        <button type="submit" class="submit-btn">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения удаления -->
+  <div id="confirmDeleteModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('confirmDeleteModal')">&times;</span>
+      <h2>Подтверждение удаления</h2>
+      <p>Вы действительно хотите удалить эту аренду?</p>
+      <input type="hidden" id="deleteRentalId">
+      <div class="modal-buttons">
+        <button onclick="closeModal('confirmDeleteModal')" class="cancel-btn">Отмена</button>
+        <button onclick="deleteRental()" class="delete-btn">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Функция для загрузки всех аренд (нужна для обновления таблиц после изменений)
+    async function loadAllRentals() {
+        try {
+            const response = await fetch('/api/rentals/show');
+            const rentals = await response.json();
+            const tbody = document.querySelector('table tbody');
+            tbody.innerHTML = ''; // Очищаем таблицу
+
+            rentals.forEach(rental => {
+                addRentalToTable(rental);
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки аренд:', error);
+        }
+    }
+    // Функция для загрузки клиентов и домов в выпадающие списки
+    async function loadRentalFormData() {
+        try {
+            const clientSelect = document.getElementById('addClient');
+            const houseSelect = document.getElementById('addHouse');
+
+            // Очищаем списки
+            clientSelect.innerHTML = '<option value="">Выберите клиента</option>';
+            houseSelect.innerHTML = '<option value="">Выберите дом</option>';
+
+            // Параллельная загрузка клиентов и домов
+            const [clientsResponse, housesResponse] = await Promise.all([
+                fetch('/api/clients/show'),
+                fetch('/api/houses/show')
+            ]);
+
+            const clients = await clientsResponse.json();
+            const houses = await housesResponse.json();
+
+            // Заполняем список клиентов
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                clientSelect.appendChild(option);
+            });
+
+            // Заполняем список домов
+            houses.forEach(house => {
+                const option = document.createElement('option');
+                option.value = house.id;
+                option.textContent = house.name;
+                houseSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка при загрузке данных:', error);
+            alert('Не удалось загрузить данные');
+        }
+    }
+
+    // Функция для открытия модального окна
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            loadRentalFormData();
+
+            // При открытии окна добавления — обновляем disable
+            if (modalId === 'addRentalModal') {
+                selectedHouseId = null; // сбрасываем выбранный дом
+                updateDisabledDates();  // снова блокируем все даты до выбора дома
+            }
+        }
+    }
+
+
+    // Функция для закрытия модального окна
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            if (modalId === 'addRentalModal') {
+                document.getElementById('addRentalForm').reset();
+            }
+        }
+    }
+
+    // Закрытие при клике вне модального окна
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal(event.target.id);
+        }
+    });
+
+    document.getElementById('addRentalForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const clientId = document.getElementById('addClient').value;
+        const houseId = document.getElementById('addHouse').value;
+        const startDate = startPicker.selectedDates[0]?.toISOString().split('T')[0];
+        const endDate = endPicker.selectedDates[0]?.toISOString().split('T')[0];
+
+        if (!clientId || !houseId || !startDate || !endDate) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        const requestData = {
+            client: { id: parseInt(clientId) },
+            house: { id: parseInt(houseId) },
+            startDate: startDate,
+            endDate: endDate
+        };
+
+        try {
+            const response = await fetch('/api/rentals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            });
+
+            if (response.ok) {
+                closeModal('addRentalModal');
+                document.getElementById('addRentalForm').reset();
+                await loadAllRentals(); // Перезагружаем все аренды
+                alert('Аренда успешно добавлена!');
+            } else {
+                alert('Ошибка при добавлении аренды: ' + await response.text());
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при добавлении аренды');
+        }
+    });
+
+    // Глобальные переменные для календарей редактирования
+    let editStartPicker, editEndPicker;
+
+    // Функция открытия модального окна редактирования
+    function openEditRentalModal(button) {
+      const rentalId = button.dataset.id;
+      const clientId = button.dataset.clientId;
+      const clientName = button.closest('tr').querySelector('td:nth-child(1)').textContent;
+      const houseId = button.dataset.houseId;
+      const houseName = button.closest('tr').querySelector('td:nth-child(2)').textContent;
+      const startDate = button.dataset.startDate;
+      const endDate = button.dataset.endDate;
+      const summaryPrice = button.closest('tr').querySelector('td:nth-child(5)').textContent;
+
+      // Заполняем форму
+      document.getElementById('editRentalId').value = rentalId;
+      document.getElementById('editClientName').textContent = clientName;
+      document.getElementById('editHouseName').textContent = houseName;
+      document.getElementById('editSummaryPrice').textContent = summaryPrice;
+
+      // Инициализируем календари (если еще не инициализированы)
+      if (!editStartPicker) {
+        editStartPicker = flatpickr("#editStartDate", {
+          dateFormat: "Y-m-d",
+          locale: "ru",
+          minDate: "today"
+        });
+      }
+
+      if (!editEndPicker) {
+        editEndPicker = flatpickr("#editEndDate", {
+          dateFormat: "Y-m-d",
+          locale: "ru",
+          minDate: "today"
+        });
+      }
+
+      // Устанавливаем даты
+      editStartPicker.setDate(startDate);
+      editEndPicker.setDate(endDate);
+
+      // Блокируем занятые даты (кроме текущего периода)
+      updateEditDisabledDates(houseId, startDate, endDate);
+
+      openModal('editRentalModal');
+    }
+
+    // Функция для добавления аренды в таблицу
+    function addRentalToTable(rental) {
+        const tbody = document.querySelector('table tbody');
+        const newRow = document.createElement('tr');
+        newRow.setAttribute('data-id', rental.id);
+
+        // Форматирование дат
+        const startDate = new Date(rental.startDate).toLocaleDateString('ru-RU');
+        const endDate = new Date(rental.endDate).toLocaleDateString('ru-RU');
+
+        // Безопасное форматирование цены
+        let formattedPrice = '0';
+        if (rental.summaryPrice !== null && rental.summaryPrice !== undefined) {
+            formattedPrice = Number(rental.summaryPrice) % 1 === 0
+                ? Number(rental.summaryPrice).toFixed(0)
+                : Number(rental.summaryPrice).toFixed(2);
+        }
+
+        newRow.innerHTML = `
+            <td>${rental.client?.name || ''}</td>
+            <td>${rental.house?.name || ''}</td>
+            <td>${startDate}</td>
+            <td>${endDate}</td>
+            <td>${formattedPrice}</td>
+            <td>
+                <button class="edit-btn"
+                        data-id="${rental.id}"
+                        data-client-id="${rental.client?.id || ''}"
+                        data-house-id="${rental.house?.id || ''}"
+                        data-start-date="${rental.startDate}"
+                        data-end-date="${rental.endDate}"
+                        data-summary-price="${rental.summaryPrice || ''}"
+                        onclick="openEditRentalModal(this)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="delete-btn"
+                        data-id="${rental.id}"
+                        onclick="confirmRentalDelete(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(newRow);
+    }
+
+    // Отключение уже забронированных дат
+    let bookedDates = bookedPeriods;
+    let selectedHouseId = null;
+    let startPicker, endPicker;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Инициализация календарей, пока ВСЕ даты заблокированы
+      startPicker = flatpickr("#addStartDate", {
+        dateFormat: "Y-m-d",
+        locale: "ru",
+        disable: [
+          { from: "1900-01-01", to: "9999-12-31" } // Блокируем все даты до выбора дома
+        ],
+        onChange: function(selectedDates, dateStr) {
+          endPicker.set('minDate', dateStr);
+        }
+      });
+
+      endPicker = flatpickr("#addEndDate", {
+        dateFormat: "Y-m-d",
+        locale: "ru",
+        disable: [
+          { from: "1900-01-01", to: "9999-12-31" } // Блокируем все даты до выбора дома
+        ],
+      });
+
+      document.getElementById('addHouse').addEventListener('change', function (e) {
+        selectedHouseId = e.target.value;
+        updateDisabledDates();
+      });
+    });
+
+
+    function updateDisabledDates() {
+      if (!selectedHouseId || !bookedDates[selectedHouseId]) {
+        // Если дом не выбран или нет данных — блокируем все даты
+        startPicker.set('disable', [{ from: "1900-01-01", to: "9999-12-31" }]);
+        endPicker.set('disable', [{ from: "1900-01-01", to: "9999-12-31" }]);
+        return;
+      }
+
+      // Разблокируем все даты, кроме занятых
+      const periods = bookedDates[selectedHouseId];
+      const disabledRanges = periods.map(p => {
+        return {
+          from: p.startDate,
+          to: p.endDate
+        };
+      });
+
+      startPicker.set('disable', disabledRanges);
+      endPicker.set('disable', disabledRanges);
+    }
+
+    // Функция обновления заблокированных дат для редактирования
+    function updateEditDisabledDates(houseId, currentStart, currentEnd) {
+      if (!bookedPeriods[houseId]) return;
+
+      const disabledDates = bookedPeriods[houseId]
+        .filter(period =>
+          period.startDate !== currentStart ||
+          period.endDate !== currentEnd
+        )
+        .flatMap(period => {
+          const start = new Date(period.startDate);
+          const end = new Date(period.endDate);
+          const dates = [];
+
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            dates.push(d.toISOString().split('T')[0]);
+          }
+          return dates;
+        });
+
+      // Блокируем занятые даты для выбора начала и конца
+      editStartPicker.set('disable', disabledDates);
+      editEndPicker.set('disable', disabledDates);
+
+      // Обновляем ограничение: дата окончания не может быть раньше даты начала
+      editStartPicker.set('onChange', function (selectedDates) {
+        if (selectedDates.length > 0) {
+          editEndPicker.set('minDate', selectedDates[0]);
+        }
+      });
+
+      // При инициализации тоже установить minDate, если дата начала уже выбрана
+      if (editStartPicker.selectedDates.length > 0) {
+        editEndPicker.set('minDate', editStartPicker.selectedDates[0]);
+      }
+    }
+
+
+    // Обработчик формы редактирования
+    document.getElementById('editRentalForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const rentalId = document.getElementById('editRentalId').value;
+      const startDate = editStartPicker.selectedDates[0]?.toISOString().split('T')[0];
+      const endDate = editEndPicker.selectedDates[0]?.toISOString().split('T')[0];
+
+      if (!startDate || !endDate) {
+        alert('Заполните все поля');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/rentals/${rentalId}?startDate=${startDate}&endDate=${endDate}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          closeModal('editRentalModal');
+          await loadAllRentals();
+          alert('Изменения сохранены!');
+        } else {
+          alert('Ошибка при сохранении: ' + await response.text());
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Произошла ошибка при сохранении');
+      }
+    });
+
+    // Функция подтверждения удаления
+    function confirmRentalDelete(button) {
+      const rentalId = button.dataset.id;
+      document.getElementById('deleteRentalId').value = rentalId;
+      openModal('confirmDeleteModal');
+    }
+
+    // Функция удаления аренды
+    async function deleteRental() {
+      const rentalId = document.getElementById('deleteRentalId').value;
+
+      try {
+        const response = await fetch(`/api/rentals/${rentalId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          closeModal('confirmDeleteModal');
+          await loadAllRentals();
+          alert('Аренда успешно удалена!');
+        } else {
+          alert('Ошибка при удалении: ' + await response.text());
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Произошла ошибка при удалении');
+      }
+    }
+
+  </script>
+</section>
+</body>
+</html>

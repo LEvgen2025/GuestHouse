@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+<!--  <link rel="stylesheet" th:href="@{/rentalServices.css}">-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+  <title>Заказы</title>
+  <style>
+    /* Стили для модальных окон */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 50%;
+      border-radius: 5px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .submit-btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .submit-btn:hover {
+      background-color: #45a049;
+    }
+
+    .add-btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+
+    .edit-btn, .delete-btn {
+        padding: 5px 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        margin-right: 5px;
+    }
+
+    .edit-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .delete-btn {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .datetime-input {
+      width: 100%;
+    }
+
+    /* Стили для таблицы */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    /* Стили для подтверждения удаления */
+    .confirmation-dialog {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .confirmation-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 30%;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .confirmation-buttons {
+      margin-top: 20px;
+    }
+
+    .confirm-btn, .cancel-btn {
+      padding: 8px 15px;
+      margin: 0 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .confirm-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #ccc;
+    }
+  </style>
+</head>
+<body>
+<section layout:fragment="content">
+  <h1>Список заказов</h1>
+  <br>
+  <button class="add-btn" onclick="openModal('addRentalServiceModal')">Добавить заказ</button>
+
+  <table>
+    <thead>
+    <tr>
+      <th>Клиент</th>
+      <th>Услуга</th>
+      <th>Цена</th>
+      <th>Время выполнения</th>
+      <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="rentalService : ${rentalServices}" th:attr="data-id=${rentalService.id}">
+      <td th:text="${rentalService.rental.client.name}"></td>
+      <td th:text="${rentalService.service.name}"></td>
+      <td th:text="${rentalService.service.price % 1 == 0} ?
+                   ${#numbers.formatDecimal(rentalService.service.price, 0, 0)} :
+                   ${#numbers.formatDecimal(rentalService.service.price, 2, 2)}"></td>
+      <td th:text="${#temporals.format(rentalService.exTime, 'dd.MM.yyyy HH:mm')}"></td>
+      <td>
+        <button class="edit-btn"
+                th:attr="data-id=${rentalService.id},
+                         data-service-id=${rentalService.service.id},
+                         data-rental-id=${rentalService.rental.id},
+                         data-price=${rentalService.service.price},
+                         data-exTime=${#temporals.format(rentalService.exTime, 'yyyy-MM-dd HH:mm')}"
+                onclick="openEditRentalServiceModal(this)">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="delete-btn"
+                th:attr="data-id=${rentalService.id}"
+                onclick="confirmRentalServiceDelete(this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- Модальное окно добавления -->
+  <div id="addRentalServiceModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('addRentalServiceModal')">&times;</span>
+      <h2>Добавить заказ</h2>
+      <form id="addRentalServiceForm">
+        <div class="form-group">
+          <label for="addClient">Клиент:</label>
+          <select id="addClient" required>
+            <option value="">Выберите клиента</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addService">Услуга:</label>
+          <select id="addService" required>
+            <option value="">Выберите услугу</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addExTime">Время выполнения:</label>
+          <input type="text" id="addExTime" class="datetime-input" required>
+        </div>
+        <button type="submit" class="submit-btn">Добавить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно редактирования -->
+  <div id="editRentalServiceModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('editRentalServiceModal')">&times;</span>
+      <h2>Редактировать заказ</h2>
+      <form id="editRentalServiceForm">
+        <input type="hidden" id="editId">
+        <div class="form-group">
+          <label>Клиент:</label>
+          <span id="editClientName" class="form-readonly"></span>
+        </div>
+        <div class="form-group">
+          <label>Услуга:</label>
+          <span id="editServiceName" class="form-readonly"></span>
+        </div>
+        <div class="form-group">
+          <label>Цена:</label>
+          <span id="editServicePrice" class="form-readonly"></span>
+        </div>
+        <div class="form-group">
+          <label for="editExTime">Время выполнения:</label>
+          <input type="text" id="editExTime" class="datetime-input" required>
+        </div>
+        <button type="submit" class="submit-btn">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения удаления -->
+  <div id="deleteConfirmationDialog" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('deleteConfirmationDialog')">&times;</span>
+      <h2>Подтверждение удаления</h2>
+      <p>Вы уверены, что хотите удалить этот заказ?</p>
+      <input type="hidden" id="deleteRentalServiceId">
+      <div class="modal-buttons">
+        <button onclick="closeModal('deleteConfirmationDialog')" class="cancel-btn">Отмена</button>
+        <button onclick="deleteRentalService()" class="delete-btn">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Глобальные переменные для календарей
+    let addExTimePicker, editExTimePicker;
+
+    // Функция для загрузки клиентов и услуг в выпадающие списки
+    // Функция для загрузки клиентов (только с бронированиями) и услуг в выпадающие списки
+    async function loadRentalServiceFormData() {
+        try {
+            const clientSelect = document.getElementById('addClient');
+            const serviceSelect = document.getElementById('addService');
+
+            // Очищаем списки
+            clientSelect.innerHTML = '<option value="">Выберите клиента</option>';
+            serviceSelect.innerHTML = '<option value="">Выберите услугу</option>';
+
+            // Параллельная загрузка клиентов с бронированиями и услуг
+            const [rentalsResponse, servicesResponse] = await Promise.all([
+                fetch('/api/rentals/show'), // Загружаем бронирования (аренды)
+                fetch('/api/services/show')
+            ]);
+
+            const rentals = await rentalsResponse.json();
+            const services = await servicesResponse.json();
+
+            // Собираем уникальных клиентов из бронирований
+            const clientsMap = new Map();
+            rentals.forEach(rental => {
+                if (rental.client && !clientsMap.has(rental.client.id)) {
+                    clientsMap.set(rental.client.id, {
+                        id: rental.id, // Используем ID аренды
+                        name: rental.client.name
+                    });
+                }
+            });
+
+            // Заполняем список клиентов (только тех, у кого есть бронирования)
+            clientsMap.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id; // Здесь будет ID аренды
+                option.textContent = client.name;
+                clientSelect.appendChild(option);
+            });
+
+            // Заполняем список услуг
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.id;
+                option.textContent = `${service.name} (${service.price % 1 === 0 ?
+                    service.price.toFixed(0) : service.price.toFixed(2)} руб.)`;
+                serviceSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка при загрузке данных:', error);
+            alert('Не удалось загрузить данные для формы');
+        }
+    }
+
+    // Функция для загрузки всех заказов
+    async function loadRentalServices() {
+        try {
+            const response = await fetch('/api/rentServices/show');
+            const rentalServices = await response.json();
+            renderRentalServices(rentalServices);
+        } catch (error) {
+            console.error('Ошибка загрузки заказов:', error);
+            alert('Не удалось загрузить список заказов');
+        }
+    }
+
+    // Функция отрисовки списка заказов
+    function renderRentalServices(rentalServices) {
+        const tbody = document.querySelector('table tbody');
+        tbody.innerHTML = '';
+
+        rentalServices.forEach(service => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-id', service.id);
+
+            const formattedPrice = service.service.price % 1 === 0 ?
+                service.service.price.toFixed(0) : service.service.price.toFixed(2);
+
+            const formattedDate = new Date(service.exTime).toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            row.innerHTML = `
+                <td>${service.rental.client.name}</td>
+                <td>${service.service.name}</td>
+                <td>${formattedPrice}</td>
+                <td>${formattedDate}</td>
+                <td>
+                    <button class="edit-btn"
+                            data-id="${service.id}"
+                            data-service-id="${service.service.id}"
+                            data-rental-id="${service.rental.id}"
+                            data-price="${service.service.price}"
+                            data-exTime="${new Date(service.exTime).toISOString().slice(0, 16)}"
+                            onclick="openEditRentalServiceModal(this)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="delete-btn"
+                            data-id="${service.id}"
+                            onclick="confirmRentalServiceDelete(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    // Функции для работы с модальными окнами
+    function openModal(modalId) {
+        if (modalId === 'addRentalServiceModal') {
+            loadRentalServiceFormData();
+        }
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Закрытие при клике вне модального окна
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal(event.target.id);
+        }
+    });
+
+    // Инициализация календарей при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        addExTimePicker = flatpickr("#addExTime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            locale: "ru",
+            minDate: "today"
+        });
+
+        editExTimePicker = flatpickr("#editExTime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            locale: "ru",
+            minDate: "today"
+        });
+
+        // Обработчик формы добавления
+        document.getElementById('addRentalServiceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await addRentalService();
+        });
+
+        // Обработчик формы редактирования
+        document.getElementById('editRentalServiceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await updateRentalService();
+        });
+
+        // Загружаем начальные данные
+        loadRentalServices();
+    });
+
+    // Открытие модального окна редактирования
+    function openEditRentalServiceModal(button) {
+        const id = button.getAttribute('data-id');
+        const serviceId = button.getAttribute('data-service-id');
+        const rentalId = button.getAttribute('data-rental-id');
+        const price = button.getAttribute('data-price');
+        const exTime = button.getAttribute('data-exTime');
+
+        // Получаем имена из таблицы
+        const row = button.closest('tr');
+        const clientName = row.querySelector('td:nth-child(1)').textContent;
+        const serviceName = row.querySelector('td:nth-child(2)').textContent;
+
+        // Заполняем форму
+        document.getElementById('editId').value = id;
+        document.getElementById('editClientName').textContent = clientName;
+        document.getElementById('editServiceName').textContent = serviceName;
+        document.getElementById('editServicePrice').textContent =
+            price % 1 === 0 ? parseFloat(price).toFixed(0) : parseFloat(price).toFixed(2) + ' руб.';
+
+        // Устанавливаем дату
+        editExTimePicker.setDate(exTime);
+
+        openModal('editRentalServiceModal');
+    }
+
+    // Подтверждение удаления
+    function confirmRentalServiceDelete(button) {
+        const rentalServiceId = button.getAttribute('data-id');
+        document.getElementById('deleteRentalServiceId').value = rentalServiceId;
+        openModal('deleteConfirmationDialog');
+    }
+
+    // Функция добавления заказа
+    async function addRentalService() {
+        const rentalId = document.getElementById('addClient').value; // Это ID аренды
+        const serviceId = document.getElementById('addService').value;
+        const exTime = addExTimePicker.selectedDates[0]?.toISOString();
+
+        if (!rentalId || !serviceId || !exTime) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        const requestData = {
+            service: {
+                id: parseInt(serviceId)
+            },
+            rental: {
+                id: parseInt(rentalId)
+            },
+            exTime: exTime
+        };
+
+        console.log("Отправляемые данные:", JSON.stringify(requestData, null, 2));
+
+        try {
+            const response = await fetch('/api/rentServices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (response.ok) {
+                closeModal('addRentalServiceModal');
+                document.getElementById('addRentalServiceForm').reset();
+                await loadRentalServices();
+                alert('Заказ успешно добавлен!');
+            } else {
+                const errorText = await response.text();
+                alert('Ошибка при добавлении заказа: ' + errorText);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при добавлении заказа');
+        }
+    }
+
+    // Функция обновления заказа
+    async function updateRentalService() {
+        const id = document.getElementById('editId').value;
+        const selectedDate = editExTimePicker.selectedDates[0];
+
+        if (!selectedDate) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        // Форматируем дату в формат "YYYY-MM-DDTHH:mm" (без временной зоны)
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const hours = String(selectedDate.getHours()).padStart(2, '0');
+        const minutes = String(selectedDate.getMinutes()).padStart(2, '0');
+
+        const exTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+        if (!exTime) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/rentServices/${id}?exTime=${encodeURIComponent(exTime)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                closeModal('editRentalServiceModal');
+                await loadRentalServices();
+                alert('Заказ успешно обновлен!');
+            } else {
+                const errorText = await response.text();
+                alert('Ошибка при обновлении заказа: ' + errorText);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при обновлении заказа');
+        }
+    }
+
+    // Функция удаления заказа
+    async function deleteRentalService() {
+        const rentalServiceId = document.getElementById('deleteRentalServiceId').value;
+
+        try {
+            const response = await fetch(`/api/rentServices/${rentalServiceId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                closeModal('deleteConfirmationDialog');
+                await loadRentalServices();
+                alert('Заказ успешно удален!');
+            } else {
+                const errorText = await response.text();
+                alert('Ошибка при удалении заказа: ' + errorText);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при удалении заказа');
+        }
+    }
+  </script>
+</section>
+</body>
+</html>

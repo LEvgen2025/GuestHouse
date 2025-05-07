@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title>Панель администратора</title>
+  <link rel="stylesheet" th:href="@{/adminPanel.css}">
+</head>
+<body>
+<section layout:fragment="content">
+<h3>Изменение роли</h3>
+  <form th:action="@{/admin/user/edit}" method="post">
+    <div th:each="role : ${roles}">
+      <label>
+        <input type="radio"
+               th:name="roles"
+               th:value="${role}"
+               th:checked="${#lists.contains(user.roles, role)}" />
+        <span th:text="${role}"></span>
+      </label>
+    </div>
+    <input type="hidden" th:name="userId" th:value="${user.id}" />
+    <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
+    <button type="submit">Сохранить</button>
+  </form>
+</section>
+
+</body>
+</html>
