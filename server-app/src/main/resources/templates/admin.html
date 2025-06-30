@@ -6,11 +6,15 @@
 <head>
     <title>Панель администратора</title>
     <link rel="stylesheet" th:href="@{/adminPanel.css}">
+    <script th:src="@{/admin-panel.js}" defer></script>
 </head>
 <body>
 <section layout:fragment="content">
     <h1>Список пользователей</h1><hr>
     <br>
+    <form action="admin/registration" target="_blank">
+        <button class="add-btn">Добавить пользователя</button>
+    </form>
 
     <table>
         <thead>
@@ -27,7 +31,8 @@
             <td th:text="${user.roles.contains(T(com.example.guestHouse.repository.enums.Role).ROLE_ADMIN) ? 'Администратор' : 'Пользователь'}"></td>
             <td>
                 <form th:action="@{/admin/user/edit/{id}(id=${user.id})}" method="get">
-                    <button type="submit" class="edit-btn">
+                    <button type="submit" class="edit-btn"
+                            th:if="${user.username != currentUsername}">
                         <i class="bi bi-pencil"></i>
                     </button>
                 </form>
@@ -60,61 +65,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-        // Общие функции для работы с модальными окнами
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Закрытие при клике вне модального окна
-        window.onclick = function (event) {
-            if (event.target.className === 'modal') {
-                const modals = document.getElementsByClassName('modal');
-                for (let modal of modals) {
-                    modal.style.display = 'none';
-                }
-            }
-        }
-        
-        // Логика удаления дома
-        let userIdToDelete = null;
-
-        function confirmDelete(button) {
-            userIdToDelete = button.getAttribute('data-id');
-            openModal('deleteModal');
-        }
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-            if (!userIdToDelete) return;
-
-            try {
-                const response = await fetch(`/admin/user/delete/${userIdToDelete}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
-                    }
-                });
-
-                if (response.ok) {
-                    document.querySelector(`tr[data-id="${userIdToDelete}"]`).remove();
-                    alert('Пользователь удалён успешно!');
-                } else if (response.status === 400) {
-                    alert('Нельзя удалить самого себя!');
-                } else {
-                    alert('Ошибка при удалении: ' + response.status);
-                }
-            } catch (error) {
-                alert('Ошибка сети: ' + error.message);
-            } finally {
-                closeModal('deleteModal');
-            }
-        });
-    </script>
 
 </section>
 </body>

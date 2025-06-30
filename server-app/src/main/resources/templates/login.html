@@ -1,19 +1,68 @@
 <!DOCTYPE html>
-<html   xmlns:th="http://www.thymeleaf.org"
-        lang="ru">
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Гостевой дом</title>
+    <style>
+        body {
+            background-color: #2c3e50;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-form {
+            background-color: white;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 500px;
+        }
+        .login-form h4 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .login-form input[type="text"],
+        .login-form input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        .login-form input[type="submit"] {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .login-form a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+        .error-message {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-<h1>Гостевой дом</h1><hr>
-<h4>Авторизация</h4>
-<form action="/login" method="post">
-    Имя: <input type="text" name="username"><br><br>
-    Пароль: <input type="password" name="password"><br><br>
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-    <input type="submit" value="Вход"/>
-</form>
-<a href="/registration">Зарегистрироваться</a>
+<div class="login-form">
+    <h4>Авторизация</h4>
+    <div th:if="${param.error}" class="error-message">
+        Неправильный логин или пароль
+    </div>
+    <form action="/login" method="post">
+        <input type="text" name="username" placeholder="Имя"><br><br>
+        <input type="password" name="password" placeholder="Пароль"><br><br>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <input type="submit" value="Вход"/>
+    </form>
+</div>
 </body>
 </html>

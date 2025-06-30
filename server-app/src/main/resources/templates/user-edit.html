@@ -17,7 +17,7 @@
                th:name="roles"
                th:value="${role}"
                th:checked="${#lists.contains(user.roles, role)}" />
-        <span th:text="${role}"></span>
+        <span th:text="${role.authority == 'ROLE_ADMIN' ? 'Администратор' : (role.authority == 'ROLE_USER' ? 'Пользователь' : role.authority)}"></span>
       </label>
     </div>
     <input type="hidden" th:name="userId" th:value="${user.id}" />
