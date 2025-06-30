@@ -24,7 +24,6 @@ public class RentalViewController {
         // Получаем список занятых периодов в формате {houseId: [{startDate, endDate}, ...]}
         Map<Long, List<Map<String, LocalDate>>> bookedPeriods = rentalService.getBookedPeriodsByHouse();
         model.addAttribute("bookedPeriods", bookedPeriods);
-        System.out.println(bookedPeriods);
         return "rentals";
     }
 }

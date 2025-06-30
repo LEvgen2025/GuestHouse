@@ -21,15 +21,4 @@ public class UserViewController {
     public String login() {
         return "login";
     }
-
-    @GetMapping("/registration")
-    public String registration() {
-        return "registration";
-    }
-
-    @PostMapping("/registration")
-    public String createUser(User user) {
-        userService.createUser(user);
-        return "redirect:/login";
-    }
 }

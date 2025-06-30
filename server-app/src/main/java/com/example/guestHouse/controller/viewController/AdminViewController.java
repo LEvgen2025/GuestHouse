@@ -64,4 +64,15 @@ public class AdminViewController {
         userService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/admin/registration")
+    public String registration() {
+        return "registration";
+    }
+
+    @PostMapping("/admin/registration")
+    public String createUser(User user) {
+        userService.createUser(user);
+        return "redirect:/admin";
+    }
 }

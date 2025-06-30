@@ -5,13 +5,16 @@
       layout:decorate="~{layout}">
 
 <head>
-    <link rel="stylesheet" th:href="@{/clients.css}">
+<!--    <link rel="stylesheet" th:href="@{/clients.css?v=2}">-->
 <!--    <script th:src="@{/clients.js?v=2}"></script>-->
     <title> Клиенты </title>
 </head>
 
 <body>
 <section layout:fragment="content">
+
+    <!-- Подключение внешнего JS файла -->
+    <script th:src="@{/clients.js}" defer></script>
 
     <h1>Список клиентов</h1>
     <br>
@@ -50,6 +53,7 @@
             <span class="close" onclick="closeModal('addModal')">&times;</span>
             <h2>Добавить клиента</h2>
             <form id="addForm">
+                <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
                 <div class="form-group">
                     <label for="addName">ФИО:</label>
                     <input type="text" id="addName" required>
@@ -69,6 +73,7 @@
             <h2>Редактировать клиента</h2>
             <form id="editForm">
                 <input type="hidden" id="editClientId">
+                <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
                 <div class="form-group">
                     <label for="editName">ФИО:</label>
                     <input type="text" id="editName" required>
@@ -91,249 +96,14 @@
                 <button type="button" class="edit-btn" onclick="closeModal('deleteModal')" style="margin-right: 10px;">
                     Отмена
                 </button>
+                <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
                 <button type="button" class="delete-btn" id="confirmDeleteBtn">
                     Удалить
                 </button>
             </div>
         </div>
     </div>
-    <script>
-        // Функция для загрузки клиентов с сервера
-        async function loadClients() {
-            try {
-                const response = await fetch('/api/clients/show');
-                if (response.ok) {
-                    const clients = await response.json();
-                    renderClientsTable(clients);
-                } else {
-                    console.error('Ошибка загрузки клиентов');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
 
-        // Функция для отрисовки таблицы клиентов
-        function renderClientsTable(clients) {
-            const tbody = document.querySelector('table tbody');
-            tbody.innerHTML = ''; // Очищаем таблицу
-
-            clients.forEach(client => {
-                const row = document.createElement('tr');
-                row.setAttribute('data-id', client.id);
-
-                row.innerHTML = `
-                    <td>${client.name}</td>
-                    <td>${formatPhoneNumber(client.phoneNumber)}</td>
-                    <td>
-                        <button class="edit-btn"
-                                data-id="${client.id}"
-                                data-name="${client.name}"
-                                data-phone="${client.phoneNumber}"
-                                onclick="openEditModal(this)">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="delete-btn"
-                                data-id="${client.id}"
-                                onclick="confirmDelete(this)">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                `;
-
-                tbody.appendChild(row);
-            });
-        }
-        // Функция для форматирования номера телефона
-        function formatPhoneNumber(phone) {
-            // Сохраняем + в начале, если он есть
-            const hasPlus = phone.startsWith('+');
-            let raw = phone.replace(/\D/g, ''); // Очищаем от всего кроме цифр
-
-            if (raw.length === 11) {
-                return `+7(${raw.slice(1, 4)})-${raw.slice(4, 7)}-${raw.slice(7, 9)}-${raw.slice(9, 11)}`;
-            } else if (hasPlus && raw.length === 11) {
-                // Если был + и 11 цифр
-                return `+7(${raw.slice(1, 4)})-${raw.slice(4, 7)}-${raw.slice(7, 9)}-${raw.slice(9, 11)}`;
-            }
-            return phone; // Если номер не соответствует формату, возвращаем как есть
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            loadClients();
-
-            // Форматируем все номера телефонов при загрузке
-            document.querySelectorAll("tbody td:nth-child(2)").forEach(function (td) {
-                td.textContent = formatPhoneNumber(td.textContent);
-            });
-        });
-
-        // Общие функции для работы с модальными окнами
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Закрытие при клике вне модального окна
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                const modals = document.getElementsByClassName('modal');
-                for (let modal of modals) {
-                    modal.style.display = 'none';
-                }
-            }
-        }
-
-        // Функция открытия модального окна редактирования
-        function openEditModal(button) {
-            document.getElementById('editClientId').value = button.getAttribute('data-id');
-            document.getElementById('editName').value = button.getAttribute('data-name');
-
-            // При открытии формы редактирования показываем номер в том виде, как он хранится на сервере
-            document.getElementById('editPhone').value = button.getAttribute('data-phone');
-
-            openModal('editModal');
-        }
-
-        // Обработчик формы добавления
-        document.getElementById('addForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const name = document.getElementById('addName').value;
-            let phone = document.getElementById('addPhone').value;
-
-            if (!name || !phone) {
-                alert('Заполните все поля');
-                return;
-            }
-
-            try {
-                // Сохраняем номер как есть (с +, если он есть)
-                const response = await fetch('/api/clients', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        phoneNumber: phone // Сохраняем номер в исходном виде
-                    })
-                });
-
-                if (response.ok) {
-                    const newClient = await response.json();
-                    addClientToTable(newClient);
-                    closeModal('addModal');
-                    document.getElementById('addForm').reset();
-                    alert('Клиент успешно добавлен!');
-                } else {
-                    alert('Ошибка при добавлении клиента: ' + await response.text());
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Произошла ошибка при добавлении');
-            }
-        });
-
-        // Функция для добавления клиента в таблицу
-        function addClientToTable(client) {
-            const tbody = document.querySelector('table tbody');
-            const newRow = document.createElement('tr');
-            newRow.setAttribute('data-id', client.id);
-
-            newRow.innerHTML = `
-                <td>${client.name}</td>
-                <td>${formatPhoneNumber(client.phoneNumber)}</td>
-                <td>
-                    <button class="edit-btn"
-                            data-id="${client.id}"
-                            data-name="${client.name}"
-                            data-phone="${client.phoneNumber}"
-                            onclick="openEditModal(this)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="delete-btn"
-                            data-id="${client.id}"
-                            onclick="confirmDelete(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            `;
-
-            tbody.appendChild(newRow);
-        }
-
-        // Обработчик формы редактирования
-        document.getElementById('editForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const clientId = document.getElementById('editClientId').value;
-            const name = document.getElementById('editName').value;
-            const phone = document.getElementById('editPhone').value; // Берем номер как есть
-
-            try {
-                const response = await fetch(`/api/clients/${clientId}?name=${encodeURIComponent(name)}&phoneNumber=${encodeURIComponent(phone)}`, {
-                    method: 'PUT'
-                });
-
-                if (response.ok) {
-                    const row = document.querySelector(`tr[data-id="${clientId}"]`);
-                    if (row) {
-                        row.cells[0].textContent = name;
-                        row.cells[1].textContent = formatPhoneNumber(phone); // Форматируем номер перед отображением
-                        // Обновляем data-атрибуты кнопки редактирования
-                        const editBtn = row.querySelector('.edit-btn');
-                        editBtn.setAttribute('data-name', name);
-                        editBtn.setAttribute('data-phone', phone);
-                    }
-                    closeModal('editModal');
-                    alert('Данные успешно обновлены!');
-                } else {
-                    alert('Ошибка при обновлении данных');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Произошла ошибка при отправке данных');
-            }
-        });
-
-        // Логика удаления клиента
-        let clientIdToDelete = null;
-
-        function confirmDelete(button) {
-            clientIdToDelete = button.getAttribute('data-id');
-            openModal('deleteModal');
-        }
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-            if (!clientIdToDelete) return;
-
-            try {
-                const response = await fetch(`/api/clients/${clientIdToDelete}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    const row = document.querySelector(`tr[data-id="${clientIdToDelete}"]`);
-                    if (row) {
-                        row.remove();
-                    }
-                    alert('Клиент успешно удален!');
-                } else {
-                    alert('Ошибка при удалении клиента');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Произошла ошибка при удалении');
-            } finally {
-                closeModal('deleteModal');
-                clientIdToDelete = null;
-            }
-        });
-    </script>
 </section>
 </body>
 </html>

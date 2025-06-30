@@ -73,13 +73,6 @@ public class RentalService {
         }
         Rental rental = optionalRental.get();
 
-//        if (house != null && client != null && startDate != null && endDate != null) {
-//            Optional<Rental> foundByDate = rentalRepository.findByRentalDate(rental.getHouse(), rental.getClient(), startDate, endDate, rental.getId());
-//            if(foundByDate.isPresent()) {
-//                throw new IllegalArgumentException("Аренда с такими данными уже существует");
-//            }
-//        }
-
         if (house != null && !house.equals(rental.getHouse())) {
             rental.setHouse(house);
         }
@@ -92,16 +85,5 @@ public class RentalService {
         if (endDate != null && !endDate.equals(rental.getEndDate())) {
             rental.setEndDate(endDate);
         }
-//        if (house != null || client != null && startDate != null && endDate != null){
-//            Optional<Rental> foundByDate = rentalRepository.findByRentalDate(rental.getHouse().getId(), rental.getClient().getId(), startDate, endDate);
-//            if(foundByDate.isPresent()) {
-//                throw new IllegalStateException("Аренда с такими данными уже существует");
-//            }
-//            rental.setHouse(house);
-//            rental.setClient(client);
-//            rental.setStartDate(startDate);
-//            rental.setEndDate(endDate);
-//            System.out.println("Данные обновлены");
-//        }
     }
 }

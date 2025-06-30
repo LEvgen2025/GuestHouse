@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Гостевой дом</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" th:href="@{/style.css?v=2}">
 </head>
 <body>
 <!-- Боковая панель -->
@@ -25,7 +25,7 @@
         <li><a th:href="@{/rentalServices}" th:classappend="${activePage == 'rentalServices'} ? 'active'"><i class="bi bi-clipboard-fill"></i> Заказы</a></li>
         <li sec:authorize="hasRole('ROLE_ADMIN')">
             <a th:href="@{/admin}" th:classappend="${activePage == 'admin'} ? 'active'">
-                <i class="bi bi-clipboard-fill"></i> Панель администратора
+                <i class="bi bi-person-fill-gear"></i> Панель администратора
             </a>
         </li>
     </ul>

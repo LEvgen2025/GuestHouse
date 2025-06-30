@@ -6,19 +6,83 @@
 
 <section layout:fragment="content">
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var bookedPeriods = /*[[${bookedPeriods}]]*/ {};
+        /*]]>*/
+    </script>
+
+    <!-- Подключение внешнего JS файла -->
+    <script th:src="@{/main-page.js}" defer></script>
+
     <div class="page-header">
         <h1>Действия</h1>
     </div>
 
     <div class="action-buttons">
-        <a href="#" class="action-btn">
+        <a onclick="openModal('addRentalModal')" class="action-btn">
             <i class="bi bi-calendar-plus"></i>
             <span>Добавить аренду</span>
         </a>
-        <a href="#" class="action-btn">
+        <a onclick="openModal('addClientModal')" class="action-btn">
             <i class="bi bi-person-plus"></i>
             <span>Добавить клиента</span>
         </a>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="addClientModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addClientModal')">&times;</span>
+            <h2>Добавить клиента</h2>
+            <form id="addForm">
+                <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
+                <div class="form-group">
+                    <label for="addName">ФИО:</label>
+                    <input type="text" id="addName" required>
+                </div>
+                <div class="form-group">
+                    <label for="addPhone">Телефон:</label>
+                    <input type="text" id="addPhone" required>
+                </div>
+                <button type="submit" class="submit-btn">Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addRentalModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addRentalModal')">&times;</span>
+            <h2>Добавить аренду</h2>
+            <form id="addRentalForm">
+                <input type="hidden" th:name="_csrf" th:value="${_csrf.token}" />
+                <div class="form-group">
+                    <label for="addClient">Клиент:</label>
+                    <select id="addClient" required>
+                        <option value="">Выберите клиента</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="addHouse">Дом:</label>
+                    <select id="addHouse" required>
+                        <option value="">Выберите дом</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="addStartDate">Дата начала:</label>
+                    <input type="text" id="addStartDate" class="date-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addEndDate">Дата окончания:</label>
+                    <input type="text" id="addEndDate" class="date-input" required>
+                </div>
+                <button type="submit" class="submit-btn">Добавить</button>
+            </form>
+        </div>
     </div>
 
 </section>

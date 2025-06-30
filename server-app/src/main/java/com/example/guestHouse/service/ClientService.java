@@ -55,7 +55,5 @@ public class ClientService {
         if (name != null && !name.equals(client.getName())) {
             client.setName(name);
         }
-
-        //clientRepository.save(client);
     }
 }

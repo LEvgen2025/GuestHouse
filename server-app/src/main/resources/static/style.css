@@ -129,3 +129,223 @@ body {
     font-size: 18px;
     font-weight: 500;
 }
+
+/* Стили для страниц с данными */
+/* Стили для модальных окон */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 50%;
+  border-radius: 5px;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: black;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+select, input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.submit-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background-color: #45a049;
+}
+
+.add-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.edit-btn, .delete-btn {
+    padding: 5px 10px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.edit-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.datetime-input {
+  width: 100%;
+}
+
+/* Стили для таблицы */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Стили для подтверждения удаления */
+.confirmation-dialog {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.confirmation-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 30%;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.confirmation-buttons {
+  margin-top: 20px;
+}
+
+.confirm-btn, .cancel-btn {
+  padding: 8px 15px;
+  margin: 0 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: #ccc;
+}
+
+input[type="text"].date-input {
+  background: url("data:image/svg+xml,%3Csvg fill='gray' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm0-13H5V6h14v1z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background-size: 20px 20px;
+  padding-right: 35px; /* Делаем отступ для текста от иконки */
+  cursor: pointer;
+}
+
+.datepicker-container {
+  position: relative;
+}
+
+.datepicker-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.flatpickr-calendar {
+  font-family: inherit;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.flatpickr-day.disabled,
+.flatpickr-day.disabled:hover {
+  color: #ccc;
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.flatpickr-day.inRange {
+  background: #f0f0f0;
+  box-shadow: none;
+}
+
+.phone-input-container {
+    position: relative;
+}
+
+.phone-input {
+    font-family: monospace;
+    letter-spacing: 1px;
+    padding-left: 30px; /* Для смещения курсора */
+}
+
+.phone-input::before {
+    content: attr(data-template);
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    color: #999;
+    z-index: 1;
+}
+
+.phone-input:focus::before {
+    display: none;
+}

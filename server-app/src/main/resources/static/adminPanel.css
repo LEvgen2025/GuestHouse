@@ -74,3 +74,33 @@ table td, table th {
     padding: 8px;
     box-sizing: border-box;
 }
+/* Добавляем стили для выравнивания radio и текста */
+/* Сбрасываем стандартные отступы и выравниваем элементы слева */
+form div {
+  margin: 8px 0;
+  padding: 0;
+  text-align: left; /* Выравнивание по левому краю */
+}
+
+/* Делаем радио и текст в одну строку без лишних отступов */
+form label {
+  display: inline-flex; /* Гибкое выравнивание в строку */
+  align-items: center;  /* Центрируем по вертикали */
+  gap: 6px;            /* Расстояние между радио и текстом */
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+/* Убираем стандартные отступы у radio */
+form input[type="radio"] {
+  margin: 0;
+  padding: 0;
+}
+
+/* Стиль для кнопки (опционально) */
+button {
+  margin-top: 12px;
+  padding: 6px 12px;
+  display: block; /* Чтобы кнопка была на новой строке */
+}
