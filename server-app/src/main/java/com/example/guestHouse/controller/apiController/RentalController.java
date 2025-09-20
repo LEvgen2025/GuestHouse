@@ -5,6 +5,8 @@ import com.example.guestHouse.repository.House;
 import com.example.guestHouse.repository.Rental;
 import com.example.guestHouse.service.RentalService;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,5 +43,10 @@ public class RentalController {
                        @RequestParam(required = false) LocalDate endDate
     ){
         rentalService.update(id, house, client, startDate, endDate);
+    }
+
+    @PutMapping("/discount")
+    public void setDiscount(@RequestParam Long id, @RequestParam BigDecimal value) {
+        rentalService.set_discount(value, id);
     }
 }

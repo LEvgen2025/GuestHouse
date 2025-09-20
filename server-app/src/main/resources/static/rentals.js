@@ -71,6 +71,52 @@ function initDatePickers() {
     });
 }
 
+// Добавьте в функцию setupEventListeners()
+document.getElementById('discountForm').addEventListener('submit', handleDiscount);
+
+// Функция открытия модального окна скидки
+function openDiscountModal(button) {
+    currentRentalId = button.dataset.id;
+    document.getElementById('discountRentalId').value = currentRentalId;
+    document.getElementById('discountValue').value = ''; // Очищаем поле
+    openModal('discountModal');
+}
+
+// Обработчик установки скидки
+async function handleDiscount(e) {
+    e.preventDefault();
+
+    const rentalId = document.getElementById('discountRentalId').value;
+    const discountValue = document.getElementById('discountValue').value;
+
+    if (!discountValue || discountValue < 0 || discountValue > 100) {
+        alert('Введите корректное значение скидки (0-100%)');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/rentals/discount?id=${rentalId}&value=${discountValue}`, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+            }
+        });
+
+        if (response.ok) {
+            closeModal('discountModal');
+            await loadAllRentals();
+            alert('Скидка успешно применена!');
+        } else {
+            alert('Ошибка: ' + await response.text());
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Произошла ошибка при установке скидки');
+    } finally {
+        currentRentalId = null;
+    }
+}
+
 // Настройка обработчиков событий
 function setupEventListeners() {
     // Обработчик выбора дома
@@ -323,6 +369,11 @@ function addRentalToTable(rental) {
                     onclick="openEditRentalModal(this)">
                 <i class="bi bi-pencil"></i>
             </button>
+            <button class="discount-btn"
+                                data-id="${rental.id}"
+                                onclick="openDiscountModal(this)">
+                            <i class="bi bi-percent"></i>
+            </button>
             <button class="delete-btn"
                     data-id="${rental.id}"
                     onclick="confirmRentalDelete(this)">
@@ -333,6 +384,7 @@ function addRentalToTable(rental) {
 
     tbody.appendChild(newRow);
 }
+window.openDiscountModal = openDiscountModal;
 
 // Функции для редактирования
 function openEditRentalModal(button) {

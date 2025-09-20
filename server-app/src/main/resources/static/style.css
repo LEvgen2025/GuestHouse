@@ -29,6 +29,20 @@ body {
     background-color: #1a252f;
 }
 
+.discount-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 0 2px;
+}
+
+.discount-btn:hover {
+    background-color: #218838;
+}
+
 /* Боковая панель */
 .sidebar {
     width: 250px;

@@ -4,6 +4,7 @@ import com.example.guestHouse.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,10 @@ public class RentalService {
                                 Collectors.toList()
                         )
                 ));
+    }
+
+    public void set_discount(BigDecimal value, Long id) {
+        rentalRepository.setDiscount(value, id);
     }
 
     @Transactional
